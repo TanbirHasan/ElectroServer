@@ -29,10 +29,14 @@ async function run(){
     try{
       await client.connect();
       const productcollection = client.db("electro").collection("products");
-        const ordercollection = client
-          .db("order")
-          .collection("ordercollection");
+      const ordercollection = client.db("order").collection("ordercollection");
+      const userCollection = client.db("user").collection("userdata");
+      const reviewcollection = client.db("review").collection("reviewdata");
       console.log("db is connected");
+
+      const productdatacollectionforcustomer = client
+        .db("electro")
+        .collection("productdata");
 
       // getting all products
 
@@ -75,36 +79,39 @@ async function run(){
 
       // incresing quantity by one
 
-          app.put("/increase/:id", async (req, res) => {
-            const id = req.params.id;
-            console.log(id);
+      app.put("/increase/:id", async (req, res) => {
+        const id = req.params.id;
+        console.log(id);
 
-            const increasedquantity = req.body;
-            console.log(increasedquantity);
-            const newquantity = increasedquantity.updatedquantity;
-            console.log(newquantity)
-            const filter = { _id: ObjectId(id) };
-            const options = { upsert: true };
-            const updatedDoc = {
-              $set: {
-                minimumorder: newquantity,
-              },
-            };
-            const result = await productcollection.updateOne(
-              filter,
-              updatedDoc,
-              options
-            );
-            console.log(result);
-            res.send(result);
-          });
+        const increasedquantity = req.body;
+        console.log(increasedquantity);
+        const newquantity = increasedquantity.updatedquantity;
 
-          // getting order
-            app.post("/order", async (req,res) => {
-            const newService = req.body;
-            const result = await ordercollection.insertOne(newService);
-            res.send(result);
-              })
+        console.log(newquantity);
+        const filter = { _id: ObjectId(id) };
+        const options = { upsert: true };
+        const updatedDoc = {
+          $set: {
+            minimumorder: newquantity,
+          },
+        };
+        const result = await productcollection.updateOne(
+          filter,
+          updatedDoc,
+          options
+        );
+        console.log(result);
+        res.send(result);
+      });
+
+      // posting a order order
+      app.post("/order", async (req, res) => {
+        const newService = req.body;
+        const result = await ordercollection.insertOne(newService);
+        res.send(result);
+      });
+
+   
     }
     finally{
 
