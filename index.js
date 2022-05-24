@@ -138,13 +138,22 @@ async function run(){
 
       // putting userinfo
       // posting a order order
-      app.post("/userInfo", async (req, res) => {
-        const newUser = req.body;
-        const result = await userCollection.insertOne(newUser);
-        res.send(result);
+      // app.post("/userInfo", async (req, res) => {
+      //   const newUser = req.body;
+      //   const result = await userCollection.insertOne(newUser);
+      //   res.send(result);
+      // });
+
+      // getting user information
+
+      app.get("/userInfo", async (req, res) => {
+         const email = req.query.email;
+         const query = { email: email };
+        const cursor = userCollection.find(query);
+        const user = await cursor.toArray();
+        res.send(user);
       });
 
-   
     }
     finally{
 
