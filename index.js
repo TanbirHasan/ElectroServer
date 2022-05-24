@@ -111,6 +111,39 @@ async function run(){
         res.send(result);
       });
 
+      // getting individual orders
+      app.get("/myorder", async (req, res) => {
+        const email = req.query.email;
+        const query = { email: email };
+        const cursor = ordercollection.find(query);
+        const orders = await cursor.toArray();
+        res.send(orders);
+      });
+
+      // Deleting the order
+      app.delete("/order/:id", async (req, res) => {
+        const id = req.params.id;
+        const query = { _id: ObjectId(id) };
+        const result = ordercollection.deleteOne(query);
+        res.send(result);
+      });
+
+      // posting review
+      // posting a order order
+      app.post("/review", async (req, res) => {
+        const newReview = req.body;
+        const result = await reviewcollection.insertOne(newReview);
+        res.send(result);
+      });
+
+      // putting userinfo
+      // posting a order order
+      app.post("/userInfo", async (req, res) => {
+        const newUser = req.body;
+        const result = await userCollection.insertOne(newUser);
+        res.send(result);
+      });
+
    
     }
     finally{
