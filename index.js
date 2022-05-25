@@ -33,6 +33,7 @@ function verifyJWT(req, res, next) {
     return res.status(401).send({ message: "Unauthorized access" });
   }
   const token = authHeader.split(" ")[1];
+  console.log(token);
 
   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
     if (err) {
@@ -40,6 +41,7 @@ function verifyJWT(req, res, next) {
     }
 
     req.decoded = decoded;
+  
     next();
   });
 }
@@ -166,53 +168,58 @@ async function run(){
 
       // getting user information
 
-      app.get("/userInfo", verifyJWT, async (req, res) => {
+      app.get("/userInfo", async (req, res) => {
         const email = req.query.email;
-        console.log(email);
+     
 
-         const decodedEmail = req.decoded.email;
-         console.log(decodedEmail);
-         if(email === decodedEmail){
-             console.log(email);
-             const query = { email: email };
-             const cursor = userCollection.find(query);
-             const user = await cursor.toArray();
-             return res.send(user);
-
-         }
-         else{
-           return res.status(403).send({message : 'Forbidden Access'})
-
-         }
+     
       
+       
+          console.log(email);
+          const query = { email: email };
+          const cursor = userCollection.find(query);
+          const user = await cursor.toArray();
+          return res.send(user);
+     
       });
 
       // storing all user to the server
       app.put("/users/:email", async (req, res) => {
         const email = req.params.email;
         const user = req.body;
-        const userInfo = req.body
+        const userInfo = req.body;
         const filter = { email: email };
         const options = { upsert: true };
         const updateDoc = {
-          $set:{
-            
-            name:userInfo.name,
-            email:user.email || userInfo.email,
-            location:userInfo.location,
-            phone:userInfo.phone,
-            linkedin:userInfo.linkedin
-          }
+          $set: {
+            name: userInfo.name,
+            email: user.email || userInfo.email,
+            location: userInfo.location,
+            phone: userInfo.phone,
+            linkedin: userInfo.linkedin,
+          },
         };
         const result = await userCollection.updateOne(
           filter,
           updateDoc,
           options
         );
-         const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET, {
-           expiresIn: "1h",
-         });
-        res.send({result,token} );
+        const token = jwt.sign(
+          { email: email },
+          process.env.ACCESS_TOKEN_SECRET,
+          {
+            expiresIn: "1h",
+          }
+        );
+        res.send({ result, token });
+      });
+
+      // getting all users
+
+      app.get("/users", async (req, res) => {
+       
+       const users = await userCollection.find().toArray();
+       res.send(users);
       });
     }
     finally{
