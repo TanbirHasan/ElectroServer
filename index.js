@@ -33,7 +33,7 @@ function verifyJWT(req, res, next) {
     return res.status(401).send({ message: "Unauthorized access" });
   }
   const token = authHeader.split(" ")[1];
-  console.log(token);
+
 
   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
     if (err) {
@@ -95,7 +95,7 @@ async function run(){
           updatedDoc,
           options
         );
-        console.log(result);
+
         res.send(result);
       });
 
@@ -103,7 +103,7 @@ async function run(){
 
       app.put("/increase/:id", async (req, res) => {
         const id = req.params.id;
-        console.log(id);
+      
 
         const increasedquantity = req.body;
         console.log(increasedquantity);
@@ -122,7 +122,7 @@ async function run(){
           updatedDoc,
           options
         );
-        console.log(result);
+
         res.send(result);
       });
 
@@ -168,19 +168,30 @@ async function run(){
 
       // getting user information
 
-      app.get("/userInfo", async (req, res) => {
+      app.get("/userInfo",verifyJWT, async (req, res) => {
         const email = req.query.email;
-     
+        console.log(email);
+        console.log("///")
+  
 
+
+        // const query = { email: email };
+        // const cursor = userCollection.find(query);
+        // const user = await cursor.toArray();
+        // return res.send(user);
+
+        const decodedEmail = req.decoded.email;
+        console.log(decodedEmail);
+
+        if (email === decodedEmail) {
      
-      
-       
-          console.log(email);
           const query = { email: email };
           const cursor = userCollection.find(query);
           const user = await cursor.toArray();
           return res.send(user);
-     
+        } else {
+          return res.status(403).send({ message: "Forbidden Access" });
+        }
       });
 
       // storing all user to the server
@@ -208,7 +219,7 @@ async function run(){
           { email: email },
           process.env.ACCESS_TOKEN_SECRET,
           {
-            expiresIn: "1h",
+            expiresIn: "2h",
           }
         );
         res.send({ result, token });
@@ -216,11 +227,44 @@ async function run(){
 
       // getting all users
 
-      app.get("/users", async (req, res) => {
-       
-       const users = await userCollection.find().toArray();
-       res.send(users);
+      app.get("/users", verifyJWT, async (req, res) => {
+        const users = await userCollection.find().toArray();
+        res.send(users);
       });
+
+      // making an user to admin
+      app.put("/users/admin/:email",verifyJWT, async (req,res) => {
+        // const email = req.params.email;
+        // const filter = {email:email}
+        // const updatedDoc = {
+        //   $set:{role:'admin'}
+        // }
+        // const result = await userCollection.updateOne(filter,updatedDoc)
+        // res.send(result)
+
+          const email = req.params.email;
+
+          const requester = req.decoded.email;
+          
+          const requesterAccount = await userCollection.findOne({
+            email: requester,
+          });
+          if (requesterAccount.role === "admin") {
+            const filter = { email: email };
+
+            const updateDoc = {
+              $set: { role: "admin" },
+            };
+            const result = await userCollection.updateOne(filter, updateDoc);
+
+            res.send(result);
+          } else {
+            res.status(401).send({ message: "forbidden" });
+          }
+                 
+      })
+
+   
     }
     finally{
 
