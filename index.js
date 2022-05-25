@@ -103,7 +103,6 @@ async function run(){
 
       app.put("/increase/:id", async (req, res) => {
         const id = req.params.id;
-      
 
         const increasedquantity = req.body;
         console.log(increasedquantity);
@@ -168,12 +167,10 @@ async function run(){
 
       // getting user information
 
-      app.get("/userInfo",verifyJWT, async (req, res) => {
+      app.get("/userInfo", verifyJWT, async (req, res) => {
         const email = req.query.email;
         console.log(email);
-        console.log("///")
-  
-
+        console.log("///");
 
         // const query = { email: email };
         // const cursor = userCollection.find(query);
@@ -184,7 +181,6 @@ async function run(){
         console.log(decodedEmail);
 
         if (email === decodedEmail) {
-     
           const query = { email: email };
           const cursor = userCollection.find(query);
           const user = await cursor.toArray();
@@ -233,7 +229,7 @@ async function run(){
       });
 
       // making an user to admin
-      app.put("/users/admin/:email",verifyJWT, async (req,res) => {
+      app.put("/users/admin/:email", verifyJWT, async (req, res) => {
         // const email = req.params.email;
         // const filter = {email:email}
         // const updatedDoc = {
@@ -242,29 +238,33 @@ async function run(){
         // const result = await userCollection.updateOne(filter,updatedDoc)
         // res.send(result)
 
-          const email = req.params.email;
+        const email = req.params.email;
 
-          const requester = req.decoded.email;
-          
-          const requesterAccount = await userCollection.findOne({
-            email: requester,
-          });
-          if (requesterAccount.role === "admin") {
-            const filter = { email: email };
+        const requester = req.decoded.email;
 
-            const updateDoc = {
-              $set: { role: "admin" },
-            };
-            const result = await userCollection.updateOne(filter, updateDoc);
+        const requesterAccount = await userCollection.findOne({
+          email: requester,
+        });
+        if (requesterAccount.role === "admin") {
+          const filter = { email: email };
 
-            res.send(result);
-          } else {
-            res.status(401).send({ message: "forbidden" });
-          }
-                 
-      })
+          const updateDoc = {
+            $set: { role: "admin" },
+          };
+          const result = await userCollection.updateOne(filter, updateDoc);
 
-   
+          res.send(result);
+        } else {
+          res.status(401).send({ message: "forbidden" });
+        }
+      });
+      // checking ig the user is a admin or not
+      app.get("/admin/:email", verifyJWT, async (req, res) => {
+        const email = req.params.email;
+        const user = await userCollection.findOne({ email: email });
+        const isAdmin = user.role === "admin";
+        res.send({ admin: isAdmin });
+      });
     }
     finally{
 
