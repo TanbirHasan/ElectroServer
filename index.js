@@ -56,6 +56,7 @@ async function run(){
       const ordercollection = client.db("order").collection("ordercollection");
       const userCollection = client.db("user").collection("userdata");
       const reviewcollection = client.db("review").collection("reviewdata");
+        const paymentscollection = client.db("payments").collection("paymentsdata");
       console.log("db is connected");
 
       const productdatacollectionforcustomer = client
@@ -69,6 +70,19 @@ async function run(){
         const cursor = productcollection.find(query);
         const products = await cursor.toArray();
         res.send(products);
+      });
+
+      // stripe payment
+      app.post("/create-payment-intent", verifyJWT, async (req, res) => {
+        const service = req.body;
+        const price = service.price;
+        const amount = price * 100;
+        const paymentIntent = await stripe.paymentIntents.create({
+          amount: amount,
+          currency: "usd",
+          payment_method_types: ["card"],
+        });
+        res.send({ clientSecret: paymentIntent.client_secret });
       });
 
       // for single product
@@ -168,12 +182,12 @@ async function run(){
       });
 
       // getting order for payment
-      app.get("/order/:id" , async(req,res) => {
+      app.get("/order/:id", async (req, res) => {
         const id = req.params.id;
-        const query = {_id:ObjectId(id)}
-        const order = await ordercollection.findOne(query)
+        const query = { _id: ObjectId(id) };
+        const order = await ordercollection.findOne(query);
         res.send(order);
-      })
+      });
 
       // Deleting the order
       app.delete("/order/:id", async (req, res) => {
@@ -300,17 +314,21 @@ async function run(){
         res.send({ admin: isAdmin });
       });
 
-      // stripe payment 
-      app.post('/create-payment-intent',verifyJWT,async (req,res) => {
-        const service = req.body;
-        const price = service.price;
-        const amount = price*100;
-        const paymentIntent = await stripe.paymentIntents.create({
-          amount : amount,
-          currency : 'usd',
-          payment_method_types : ['card']
-        })
-        res.send({clientSecret : paymentIntent.client_secret})
+
+      app.patch("/order/:id",verifyJWT, async (req,res) => {
+           const id = req.params.id;
+           const payment = req.body;
+           const filter = {_id:ObjectId(id)}
+           const updatedDoc = {
+             $set:{
+               paid:true,
+               transactionId : payment.transactionId
+             }
+           }
+          const result = await paymentscollection.insertOne(payment);
+           const updateorder = await ordercollection.updateOne(filter,updatedDoc);
+        
+           res.send({updateorder})
       })
     }
     finally{
