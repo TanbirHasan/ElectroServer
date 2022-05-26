@@ -4,6 +4,7 @@ const express = require('express');
 
 const cors = require('cors');
 var jwt = require("jsonwebtoken");
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const port  = process.env.PORT || 7000;
 
@@ -141,12 +142,20 @@ async function run(){
 
       // getting all orders
 
-        app.get("/order", async (req, res) => {
-          const query = {};
-          const cursor = ordercollection.find(query);
-          const orders = await cursor.toArray();
-          res.send(orders);
-        });
+      app.get("/order", async (req, res) => {
+        const query = {};
+        const cursor = ordercollection.find(query);
+        const orders = await cursor.toArray();
+        res.send(orders);
+      });
+      // getting all reviews
+
+      app.get("/review", async (req, res) => {
+        const query = {};
+        const cursor = reviewcollection.find(query);
+        const reviews = await cursor.toArray();
+        res.send(reviews);
+      });
 
       // getting individual orders
       app.get("/myorder", verifyJWT, async (req, res) => {
@@ -156,6 +165,14 @@ async function run(){
         const orders = await cursor.toArray();
         res.send(orders);
       });
+
+      // getting order for payment
+      app.get("/order/:id" ,verifyJWT, async(req,res) => {
+        const id = req.params.id;
+        const query = {_id:ObjectId(id)}
+        const order = await ordercollection.findOne(query)
+        res.send(order);
+      })
 
       // Deleting the order
       app.delete("/order/:id", async (req, res) => {
