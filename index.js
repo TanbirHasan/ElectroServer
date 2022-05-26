@@ -77,6 +77,13 @@ async function run(){
         res.send(product);
       });
 
+      // post a data
+      app.post("/newproduct", async (req, res) => {
+        const newproduct = req.body;
+        const result = await productcollection.insertOne(newproduct);
+        res.send(result);
+      });
+
       // reduce a single value
 
       app.put("/reduce/:id", async (req, res) => {
@@ -131,6 +138,15 @@ async function run(){
         const result = await ordercollection.insertOne(newService);
         res.send(result);
       });
+
+      // getting all orders
+
+        app.get("/order", async (req, res) => {
+          const query = {};
+          const cursor = ordercollection.find(query);
+          const orders = await cursor.toArray();
+          res.send(orders);
+        });
 
       // getting individual orders
       app.get("/myorder", verifyJWT, async (req, res) => {
