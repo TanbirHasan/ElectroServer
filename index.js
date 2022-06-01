@@ -55,8 +55,11 @@ async function run(){
       const productcollection = client.db("electro").collection("products");
       const ordercollection = client.db("order").collection("ordercollection");
       const userCollection = client.db("user").collection("userdata");
+       const userCollectionFull = client.db("userColllectionFull").collection("userdata");
       const reviewcollection = client.db("review").collection("reviewdata");
-        const paymentscollection = client.db("payments").collection("paymentsdata");
+      const paymentscollection = client
+        .db("payments")
+        .collection("paymentsdata");
       console.log("db is connected");
 
       const productdatacollectionforcustomer = client
@@ -217,7 +220,7 @@ async function run(){
 
       app.get("/userInfo", verifyJWT, async (req, res) => {
         const email = req.query.email;
-        console.log(email);
+      
         console.log("///");
 
         // const query = { email: email };
@@ -226,11 +229,11 @@ async function run(){
         // return res.send(user);
 
         const decodedEmail = req.decoded.email;
-        console.log(decodedEmail);
+      
 
         if (email === decodedEmail) {
           const query = { email: email };
-          const cursor = userCollection.find(query);
+          const cursor = userCollectionFull.find(query);
           const user = await cursor.toArray();
           return res.send(user);
         } else {
@@ -242,16 +245,14 @@ async function run(){
       app.put("/users/:email", async (req, res) => {
         const email = req.params.email;
         const user = req.body;
-        const userInfo = req.body;
+      
         const filter = { email: email };
         const options = { upsert: true };
         const updateDoc = {
           $set: {
-            name: userInfo.name,
-            email: user.email || userInfo.email,
-            location: userInfo.location,
-            phone: userInfo.phone,
-            linkedin: userInfo.linkedin,
+         
+            email: user.email,
+         
           },
         };
         const result = await userCollection.updateOne(
@@ -269,6 +270,32 @@ async function run(){
         res.send({ result, token });
       });
 
+      // storing users with full information
+
+
+      app.put("/usersinfo/:email", async (req, res) => {
+        const email = req.params.email;
+        const userInfo = req.body;
+        const filter = { email: email };
+        const options = { upsert: true };
+        const updateDoc = {
+          $set: {
+            name: userInfo.name,
+            email: userInfo.email,
+            location: userInfo.location,
+            phone: userInfo.phone,
+            linkedin: userInfo.linkedin,
+          },
+        };
+        const result = await userCollectionFull.updateOne(
+          filter,
+          updateDoc,
+          options
+        );
+     
+        res.send(result );
+      });
+
       // getting all users
 
       app.get("/users", verifyJWT, async (req, res) => {
@@ -278,14 +305,6 @@ async function run(){
 
       // making an user to admin
       app.put("/users/admin/:email", verifyJWT, async (req, res) => {
-        // const email = req.params.email;
-        // const filter = {email:email}
-        // const updatedDoc = {
-        //   $set:{role:'admin'}
-        // }
-        // const result = await userCollection.updateOne(filter,updatedDoc)
-        // res.send(result)
-
         const email = req.params.email;
 
         const requester = req.decoded.email;
@@ -314,22 +333,21 @@ async function run(){
         res.send({ admin: isAdmin });
       });
 
+      app.patch("/order/:id", verifyJWT, async (req, res) => {
+        const id = req.params.id;
+        const payment = req.body;
+        const filter = { _id: ObjectId(id) };
+        const updatedDoc = {
+          $set: {
+            paid: true,
+            transactionId: payment.transactionId,
+          },
+        };
+        const result = await paymentscollection.insertOne(payment);
+        const updateorder = await ordercollection.updateOne(filter, updatedDoc);
 
-      app.patch("/order/:id",verifyJWT, async (req,res) => {
-           const id = req.params.id;
-           const payment = req.body;
-           const filter = {_id:ObjectId(id)}
-           const updatedDoc = {
-             $set:{
-               paid:true,
-               transactionId : payment.transactionId
-             }
-           }
-          const result = await paymentscollection.insertOne(payment);
-           const updateorder = await ordercollection.updateOne(filter,updatedDoc);
-        
-           res.send({updateorder})
-      })
+        res.send({ updateorder });
+      });
     }
     finally{
 
